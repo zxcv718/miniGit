@@ -1,5 +1,6 @@
 """정렬 알고리즘 직접 구현 (과제 제약: 표준 정렬 API 사용 금지)."""
 import random
+import time
 
 
 def merge_sort(items, key=lambda x: x):
@@ -62,3 +63,33 @@ def _partition(arr, lo, hi, key):
             i += 1
     arr[i], arr[hi] = arr[hi], arr[i]
     return i
+
+
+def _timed(sort, data):
+    start = time.perf_counter()
+    sort(data)
+    return time.perf_counter() - start
+
+
+def benchmark(sizes=(100, 1_000, 10_000), repeat=3):
+    """입력 크기·종류별 실행 시간(초, repeat회 중 최솟값)을 잰다.
+
+    'sorted' 입력은 고정 피벗 퀵 정렬의 최악 사례인데, 랜덤 피벗이라 O(n log n)이 유지되는지 확인하려고 넣었다.
+    """
+    rows = []
+    for n in sizes:
+        inputs = {
+            "random": [random.randint(0, n * 10) for _ in range(n)],
+            "sorted": list(range(n)),
+        }
+        for kind, data in inputs.items():
+            t_merge = min(_timed(merge_sort, data) for _ in range(repeat))
+            t_quick = min(_timed(quick_sort, data) for _ in range(repeat))
+            rows.append((n, kind, t_merge, t_quick))
+    return rows
+
+
+if __name__ == "__main__":
+    print(f"{'n':>7}  {'input':<7} {'merge_sort':>12} {'quick_sort':>12}")
+    for n, kind, t_merge, t_quick in benchmark():
+        print(f"{n:>7}  {kind:<7} {t_merge:>11.5f}s {t_quick:>11.5f}s")
