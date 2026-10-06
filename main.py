@@ -83,21 +83,25 @@ class Shell:
         return f"{title}\nCurrent branch: {self.repo.head}\nCurrent user: {user}"
 
     def cmd_branch(self, args):
+        """BRANCH <name>: 현재 HEAD 커밋을 가리키는 브랜치 생성."""
         repo, name = self._repo(), _name(args)
         repo.create_branch(name)
         return f"Created branch: {name}"
 
     def cmd_switch(self, args):
+        """SWITCH <name>: HEAD를 지정한 브랜치로 이동."""
         repo, name = self._repo(), _name(args)
         repo.switch(name)
         return f"Switched to branch: {name}"
 
     def cmd_commit(self, args):
+        """COMMIT <message>: HEAD를 부모로 커밋 생성(역색인 갱신 포함)."""
         repo = self._repo()
         c = repo.commit(_text(args))
         return f"[{c.branch} {c.hash}] {c.message}"
 
     def cmd_log(self, args):
+        """LOG [--sort-by=date|author]: 기본은 위상 순서, 옵션이면 병합 정렬."""
         repo = self._repo()
         if not args:
             commits = repo.log()
@@ -108,6 +112,7 @@ class Shell:
         return "\n".join(format_commit(c) for c in commits) or "No commits yet."
 
     def cmd_path(self, args):
+        """PATH <c1> <c2>: 무방향 최단 경로, 없으면 No path."""
         repo = self._repo()
         if len(args) != 2:
             raise MiniGitError(INVALID)
@@ -115,11 +120,13 @@ class Shell:
         return "No path" if path is None else "Path: " + " -> ".join(path)
 
     def cmd_ancestors(self, args):
+        """ANCESTORS <hash>: 도달 가능한 모든 조상."""
         repo, h = self._repo(), _name(args)
         commits = repo.ancestors(h)
         return bullet_list(f"Ancestors of {h}:", commits) if commits else "No ancestors."
 
     def cmd_search(self, args):
+        """SEARCH <keyword> | SEARCH --author=<name>: 역색인 검색."""
         repo, query = self._repo(), _text(args)
         if query.lower().startswith("--author="):
             commits = repo.search_author(_text([query.split("=", 1)[1]]))
@@ -131,6 +138,7 @@ class Shell:
         return bullet_list(f"Found {n} commit{'s' if n > 1 else ''}:", commits)
 
     def cmd_merge(self, args):
+        """MERGE <branch>: 두 브랜치 끝을 부모로 하는 merge 커밋 생성(보너스)."""
         repo, name = self._repo(), _name(args)
         c = repo.merge(name)
         return f"[{c.branch} {c.hash}] {c.message}"
@@ -144,7 +152,7 @@ class Shell:
             try:
                 with open(path, encoding="utf-8") as f:
                     texts.append(f.read().splitlines())
-            except (OSError, UnicodeDecodeError):
+            except (OSError, UnicodeDecodeError, ValueError):  # ValueError: 경로에 NUL 바이트
                 raise MiniGitError(f"Cannot read file: {path}")
         return "\n".join(f"{tag} {line}" for tag, line in diff_lines(*texts)) or "(both files empty)"
 
