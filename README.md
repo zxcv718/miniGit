@@ -6,7 +6,6 @@ Git의 커밋 그래프(DAG), 브랜치, 역색인 검색, 직접 구현한 정�
 
 ```bash
 python main.py        # Python 3.10+, 외부 패키지 없음
-python -m unittest -v # 테스트
 python sorting.py     # 정렬 성능 비교 (보너스)
 ```
 
