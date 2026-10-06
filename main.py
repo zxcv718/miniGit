@@ -4,6 +4,7 @@
 """
 import shlex
 
+from diff import diff_lines
 from repo import MiniGitError, Repository
 
 PROMPT = "mini-git> "
@@ -133,6 +134,19 @@ class Shell:
         repo, name = self._repo(), _name(args)
         c = repo.merge(name)
         return f"[{c.branch} {c.hash}] {c.message}"
+
+    def cmd_diff(self, args):
+        """두 텍스트 파일을 줄 단위로 비교한다. 저장소와 무관하므로 INIT 없이 동작한다."""
+        if len(args) != 2:
+            raise MiniGitError(INVALID)
+        texts = []
+        for path in args:
+            try:
+                with open(path, encoding="utf-8") as f:
+                    texts.append(f.read().splitlines())
+            except (OSError, UnicodeDecodeError):
+                raise MiniGitError(f"Cannot read file: {path}")
+        return "\n".join(f"{tag} {line}" for tag, line in diff_lines(*texts)) or "(both files empty)"
 
 
 def main():
