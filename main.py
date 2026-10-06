@@ -129,6 +129,11 @@ class Shell:
         n = len(commits)
         return bullet_list(f"Found {n} commit{'s' if n > 1 else ''}:", commits)
 
+    def cmd_merge(self, args):
+        repo, name = self._repo(), _name(args)
+        c = repo.merge(name)
+        return f"[{c.branch} {c.hash}] {c.message}"
+
 
 def main():
     """REPL 루프: exit/quit 또는 EOF(Ctrl-D)로 종료."""

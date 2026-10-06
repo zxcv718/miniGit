@@ -62,13 +62,29 @@ class Repository:
         self._require_branch(name)
         self.head = name
 
-    def commit(self, message):
-        """HEAD 커밋을 부모로 하는 새 커밋을 만들고, 브랜치를 전진시키고, 역색인을 갱신한다.
+    def merge(self, name):
+        """현재 브랜치 끝과 name 브랜치 끝을 부모로 하는 merge 커밋을 만든다(내용 병합은 흉내만).
+
+        상대 끝이 이미 내 조상이거나 나와 같으면 합칠 것이 없다 → 'Already up to date'.
+        조상 판정은 ANCESTORS와 같은 graph.ancestors를 재사용한다.
+        """
+        self._require_branch(name)
+        if name == self.head:
+            raise MiniGitError("Cannot merge a branch into itself")
+        ours, theirs = self.branches[self.head], self.branches[name]
+        if ours is None or theirs is None:
+            raise MiniGitError("Nothing to merge")
+        if theirs == ours or theirs in graph.ancestors(self._parents_map(), ours):
+            raise MiniGitError("Already up to date")
+        return self.commit(f"Merge branch '{name}' into {self.head}", extra_parent=theirs)
+
+    def commit(self, message, extra_parent=None):
+        """HEAD 커밋(+ merge면 상대 브랜치 끝)을 부모로 하는 새 커밋을 만들고, 브랜치를 전진시키고, 역색인을 갱신한다.
 
         부모는 항상 '이미 존재하는' 커밋이므로 새 간선이 사이클을 만들 수 없다 → DAG 보장.
-        역색인 갱신은 커밋이 생기는 이 한 곳에서만 일어난다.
+        역색인 갱신은 커밋이 생기는 이 한 곳에서만 일어난다(merge 커밋 포함).
         """
-        parents = [self.branches[self.head]] if self.branches[self.head] else []
+        parents = [p for p in (self.branches[self.head], extra_parent) if p]
         c = Commit(self._new_hash(), message, self.user, self.clock(), parents, self.head)
         self.commits[c.hash] = c
         self.branches[self.head] = c.hash
