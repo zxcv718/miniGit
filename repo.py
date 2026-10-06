@@ -44,7 +44,7 @@ class Repository:
         self.user = user
         self.clock = clock or datetime.now  # 테스트에선 고정 시계 주입
         self.commits = {}
-        self.branches = {"main": None}
+        self.branches: dict[str, str | None] = {"main": None}
         self.head = "main"
         self.index = InvertedIndex()
         self._counter = 0
